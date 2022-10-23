@@ -18,6 +18,7 @@ namespace Shuttle.Esb.OpenTelemetry
         private readonly string _environmentName;
         private readonly Type _inboxMessagePipelineType = typeof(InboxMessagePipeline);
         private readonly IInboxMessagePipelineObserver _inboxMessagePipelineObserver;
+        private readonly IDispatchTransportMessagePipelineObserver _dispatchTransportMessagePipelineObserver;
         private readonly OpenTelemetryOptions _openTelemetryOptions;
         private readonly ServiceBusOptions _serviceBusOptions;
         private readonly Type _startupPipelineType = typeof(StartupPipeline);
@@ -28,8 +29,10 @@ namespace Shuttle.Esb.OpenTelemetry
         private CancellationToken _cancellationToken;
         private DateTime _nextSendDate = DateTime.UtcNow;
         private Thread _thread;
+        private string _ipv4Address;
+        private bool _tracingStarted;
 
-        public OpenTelemetryModule(IOptions<OpenTelemetryOptions> sentinelOptions, IOptions<ServiceBusOptions> serviceBusOptions, Tracer tracer, IPipelineFactory pipelineFactory, IInboxMessagePipelineObserver inboxMessagePipelineObserver, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
+        public OpenTelemetryModule(IOptions<OpenTelemetryOptions> sentinelOptions, IOptions<ServiceBusOptions> serviceBusOptions, Tracer tracer, IPipelineFactory pipelineFactory, IInboxMessagePipelineObserver inboxMessagePipelineObserver, IDispatchTransportMessagePipelineObserver dispatchTransportMessagePipelineObserver, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
         {
             Guard.AgainstNull(sentinelOptions, nameof(sentinelOptions));
             Guard.AgainstNull(sentinelOptions.Value, nameof(sentinelOptions.Value));
@@ -38,6 +41,7 @@ namespace Shuttle.Esb.OpenTelemetry
             Guard.AgainstNull(tracer, nameof(tracer));
             Guard.AgainstNull(pipelineFactory, nameof(pipelineFactory));
             Guard.AgainstNull(inboxMessagePipelineObserver, nameof(inboxMessagePipelineObserver));
+            Guard.AgainstNull(dispatchTransportMessagePipelineObserver, nameof(dispatchTransportMessagePipelineObserver));
             Guard.AgainstNull(hostEnvironment, nameof(hostEnvironment));
             Guard.AgainstNullOrEmptyString(hostEnvironment.EnvironmentName, nameof(hostEnvironment.EnvironmentName));
 
@@ -45,6 +49,7 @@ namespace Shuttle.Esb.OpenTelemetry
             _openTelemetryOptions = sentinelOptions.Value;
             _tracer = tracer;
             _inboxMessagePipelineObserver = inboxMessagePipelineObserver;
+            _dispatchTransportMessagePipelineObserver = dispatchTransportMessagePipelineObserver;
             _environmentName = hostEnvironment.EnvironmentName;
 
             if (!_openTelemetryOptions.Enabled)
@@ -75,7 +80,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
             _cancellationToken = pipelineEvent.Pipeline.State.GetCancellationToken();
 
-            var ipv4Address = "0.0.0.0";
+            _ipv4Address = "0.0.0.0";
 
             foreach (var ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
             {
@@ -84,24 +89,7 @@ namespace Shuttle.Esb.OpenTelemetry
                     continue;
                 }
 
-                ipv4Address = ip.ToString();
-            }
-
-            using (var telemetrySpan = _tracer.StartRootSpan("EndpointStarted"))
-            {
-                telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
-                telemetrySpan?.SetAttribute("IPv4Address", ipv4Address);
-                telemetrySpan?.SetAttribute("EntryAssemblyQualifiedName", Assembly.GetEntryAssembly()?.FullName ?? "(unknown)");
-                telemetrySpan?.SetAttribute("InboxWorkQueueUri", _serviceBusOptions.Inbox?.WorkQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("InboxDeferredQueueUri", _serviceBusOptions.Inbox?.DeferredQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("InboxErrorQueueUri", _serviceBusOptions.Inbox?.ErrorQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("OutboxWorkQueueUri", _serviceBusOptions.Outbox?.WorkQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("OutboxErrorQueueUri", _serviceBusOptions.Outbox?.ErrorQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("ControlInboxWorkQueueUri", _serviceBusOptions.ControlInbox?.WorkQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("ControlInboxErrorQueueUri", _serviceBusOptions.ControlInbox?.ErrorQueueUri ?? string.Empty);
-                telemetrySpan?.SetAttribute("TransientInstance", _openTelemetryOptions.TransientInstance);
-                telemetrySpan?.SetAttribute("EnvironmentName", _environmentName);
+                _ipv4Address = ip.ToString();
             }
 
             _thread = new Thread(Heartbeat);
@@ -120,13 +108,30 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 if (_nextSendDate <= DateTime.UtcNow)
                 {
-                    using (var telemetrySpan = _tracer.StartRootSpan("Heartbeat"))
+                    using (var telemetrySpan = _tracer.StartRootSpan(_tracingStarted ? "Heartbeat" : "EndpointStarted"))
                     {
                         telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
                         telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+
+                        if (telemetrySpan != null && telemetrySpan.IsRecording  && !_tracingStarted)
+                        {
+                            telemetrySpan?.SetAttribute("IPv4Address", _ipv4Address);
+                            telemetrySpan?.SetAttribute("EntryAssemblyQualifiedName", Assembly.GetEntryAssembly()?.FullName ?? "(unknown)");
+                            telemetrySpan?.SetAttribute("InboxWorkQueueUri", _serviceBusOptions.Inbox?.WorkQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("InboxDeferredQueueUri", _serviceBusOptions.Inbox?.DeferredQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("InboxErrorQueueUri", _serviceBusOptions.Inbox?.ErrorQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("OutboxWorkQueueUri", _serviceBusOptions.Outbox?.WorkQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("OutboxErrorQueueUri", _serviceBusOptions.Outbox?.ErrorQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("ControlInboxWorkQueueUri", _serviceBusOptions.ControlInbox?.WorkQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("ControlInboxErrorQueueUri", _serviceBusOptions.ControlInbox?.ErrorQueueUri ?? string.Empty);
+                            telemetrySpan?.SetAttribute("TransientInstance", _openTelemetryOptions.TransientInstance);
+                            telemetrySpan?.SetAttribute("EnvironmentName", _environmentName);
+
+                            _tracingStarted = true;
+                        }
                     }
 
-                    _nextSendDate = DateTime.UtcNow.Add(_openTelemetryOptions.HeartbeatIntervalDuration);
+                    _nextSendDate = DateTime.UtcNow.Add(_tracingStarted ? _openTelemetryOptions.HeartbeatIntervalDuration : TimeSpan.FromSeconds(1));
                 }
 
                 Task.Delay(1000, _cancellationToken).Wait(_cancellationToken);
@@ -145,22 +150,20 @@ namespace Shuttle.Esb.OpenTelemetry
 
                 return;
             }
-
-            if (pipelineType != _inboxMessagePipelineType
-                &&
-                pipelineType != _dispatchTransportMessagePipelineType)
-            {
-                return;
-            }
-
+            
             if (pipelineType == _inboxMessagePipelineType)
             {
                 e.Pipeline.GetStage("Handle")
                     .BeforeEvent<OnHandleMessage>()
                     .Register<OnBeforeHandleMessage>();
+
+                e.Pipeline.RegisterObserver(_inboxMessagePipelineObserver);
             }
 
-            e.Pipeline.RegisterObserver(_inboxMessagePipelineObserver);
+            if (pipelineType == _dispatchTransportMessagePipelineType)
+            {
+                e.Pipeline.RegisterObserver(_dispatchTransportMessagePipelineObserver);
+            }
         }
     }
 }

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include=".package\AssemblyInfo.cs.template" />
+    <None Include=".package\package.msbuild" />
+    <None Include=".package\package.nuspec.template" />
+    <None Include=".package\Shuttle.NuGetPackager.MSBuild.dll" />
+    <None Include=".package\Shuttle.NuGetPackager.targets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry" Version="1.3.1" />
+    <PackageReference Include="Shuttle.Esb" Version="13.2.0" />
+  </ItemGroup>
+
+</Project>

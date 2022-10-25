@@ -2,7 +2,7 @@
 {
     public static class StateKeys
     {
-        public const string RootTelemetrySpan = "Shuttle.Esb.OpenTelemetry:RootTelemetrySpan";
+        public const string PipelineTelemetrySpan = "Shuttle.Esb.OpenTelemetry:PipelineTelemetrySpan";
         public const string TelemetrySpan = "Shuttle.Esb.OpenTelemetry:TelemetrySpan";
     }
 }

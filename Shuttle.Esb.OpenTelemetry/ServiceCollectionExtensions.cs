@@ -27,15 +27,10 @@ namespace Shuttle.Esb.OpenTelemetry
 
             builder?.Invoke(sentinelModuleBuilder);
 
-            services.TryAddSingleton<IInboxMessagePipelineObserver, InboxMessagePipelineObserver>();
-            services.TryAddSingleton<IDispatchTransportMessagePipelineObserver, DispatchTransportMessagePipelineObserver>();
-
             services.AddOptions<OpenTelemetryOptions>().Configure(options =>
             {
                 options.Enabled = sentinelModuleBuilder.Options.Enabled;
             });
-
-            services.AddSingleton(TracerProvider.Default.GetTracer("Shuttle.Esb"));
 
             services.AddPipelineModule<OpenTelemetryModule>();
 

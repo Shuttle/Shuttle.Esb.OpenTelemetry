@@ -6,7 +6,11 @@ using Shuttle.Core.Pipelines;
 
 namespace Shuttle.Esb.OpenTelemetry
 {
-    public class DispatchTransportMessagePipelineObserver : IDispatchTransportMessagePipelineObserver
+    public class DispatchTransportMessagePipelineObserver :
+        IPipelineObserver<OnPipelineStarting>,
+        IPipelineObserver<OnAfterFindRouteForMessage>,
+        IPipelineObserver<OnAfterSerializeTransportMessage>,
+        IPipelineObserver<OnAfterDispatchTransportMessage>
     {
         private readonly string _dispatchTransportMessagePipelineName = nameof(DispatchTransportMessagePipeline);
         private readonly Tracer _tracer;
@@ -25,7 +29,7 @@ namespace Shuttle.Esb.OpenTelemetry
                 var state = pipelineEvent.Pipeline.State;
 
                 var transportMessage = state.GetTransportMessage();
-                var telemetrySpan = _tracer.StartRootSpan(_dispatchTransportMessagePipelineName);
+                var telemetrySpan = _tracer.StartActiveSpan(_dispatchTransportMessagePipelineName);
 
                 telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
                 telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
@@ -37,7 +41,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
                 Baggage.SetBaggage("MessageId", transportMessage.MessageId.ToString());
 
-                pipelineEvent.Pipeline.State.SetRootTelemetrySpan(telemetrySpan);
+                pipelineEvent.Pipeline.State.SetPipelineTelemetrySpan(telemetrySpan);
 
                 telemetrySpan = _tracer.StartActiveSpan("OnFindRouteForMessage");
 

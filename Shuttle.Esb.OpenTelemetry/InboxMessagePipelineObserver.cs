@@ -6,7 +6,12 @@ using Shuttle.Core.Pipelines;
 
 namespace Shuttle.Esb.OpenTelemetry
 {
-    public class InboxMessagePipelineObserver : IInboxMessagePipelineObserver
+    public class InboxMessagePipelineObserver :
+        IPipelineObserver<OnPipelineStarting>,
+        IPipelineObserver<OnBeforeHandleMessage>,
+        IPipelineObserver<OnAfterHandleMessage>,
+        IPipelineObserver<OnPipelineException>,
+        IPipelineObserver<OnAfterDispatchTransportMessage>
     {
         private readonly string _inboxMessagePipelineName = nameof(InboxMessagePipeline);
         private readonly Tracer _tracer;
@@ -105,7 +110,7 @@ namespace Shuttle.Esb.OpenTelemetry
                 telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
                 telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
 
-                pipelineEvent.Pipeline.State.SetRootTelemetrySpan(telemetrySpan);
+                pipelineEvent.Pipeline.State.SetPipelineTelemetrySpan(telemetrySpan);
             }
             catch
             {

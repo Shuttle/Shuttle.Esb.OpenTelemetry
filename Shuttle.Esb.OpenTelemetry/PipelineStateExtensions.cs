@@ -18,12 +18,12 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public static TelemetrySpan GetRootTelemetrySpan(this IState state)
         {
-            return state.Get<TelemetrySpan>(StateKeys.RootTelemetrySpan);
+            return state.Get<TelemetrySpan>(StateKeys.PipelineTelemetrySpan);
         }
 
-        public static void SetRootTelemetrySpan(this IState state, TelemetrySpan telemetrySpan)
+        public static void SetPipelineTelemetrySpan(this IState state, TelemetrySpan telemetrySpan)
         {
-            state.Replace(StateKeys.RootTelemetrySpan, telemetrySpan);
+            state.Replace(StateKeys.PipelineTelemetrySpan, telemetrySpan);
         }
     }
 }

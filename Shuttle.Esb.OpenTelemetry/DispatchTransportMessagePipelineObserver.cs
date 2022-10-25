@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Shuttle.Core.Contract;
@@ -27,27 +30,50 @@ namespace Shuttle.Esb.OpenTelemetry
             try
             {
                 var state = pipelineEvent.Pipeline.State;
-
+                
                 var transportMessage = state.GetTransportMessage();
                 var telemetrySpan = _tracer.StartActiveSpan(_dispatchTransportMessagePipelineName);
 
-                telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
-
-                if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
+                if (telemetrySpan != null)
                 {
-                    Baggage.SetBaggage("CorrelationId", transportMessage.CorrelationId);
+                    telemetrySpan.SetAttribute("MachineName", Environment.MachineName);
+                    telemetrySpan.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+
+                    if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
+                    {
+                        Baggage.SetBaggage("CorrelationId", transportMessage.CorrelationId);
+                    }
+
+                    Baggage.SetBaggage("MessageId", transportMessage.MessageId.ToString());
+
+                    transportMessage.Headers.Add(new TransportHeader
+                    {
+                        Key = TransportHeaderKeys.ParentTraceId,
+                        Value = telemetrySpan.Context.TraceId.ToString()
+                    });
+
+                    if (!transportMessage.Headers.Contains(TransportHeaderKeys.Baggage))
+                    {
+                        var baggage = string.Join(",", Baggage.GetBaggage().Select(item => $"{item.Key}={HttpUtility.UrlEncode(item.Value)}"));
+
+                        if (!string.IsNullOrEmpty(baggage))
+                        {
+                            transportMessage.Headers.Add(new TransportHeader
+                            {
+                                Key = TransportHeaderKeys.Baggage,
+                                Value = baggage
+                            });
+                        }
+                    }
+
+                    state.SetPipelineTelemetrySpan(telemetrySpan);
                 }
-
-                Baggage.SetBaggage("MessageId", transportMessage.MessageId.ToString());
-
-                pipelineEvent.Pipeline.State.SetPipelineTelemetrySpan(telemetrySpan);
 
                 telemetrySpan = _tracer.StartActiveSpan("OnFindRouteForMessage");
 
                 telemetrySpan?.SetAttribute("MessageType", transportMessage.MessageType);
 
-                pipelineEvent.Pipeline.State.SetTelemetrySpan(telemetrySpan);
+                state.SetTelemetrySpan(telemetrySpan);
             }
             catch
             {

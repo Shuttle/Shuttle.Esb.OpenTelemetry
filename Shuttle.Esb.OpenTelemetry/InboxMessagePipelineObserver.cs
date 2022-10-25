@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Web;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Shuttle.Core.Contract;
@@ -42,14 +46,45 @@ namespace Shuttle.Esb.OpenTelemetry
                     return;
                 }
 
-                var telemetrySpan = _tracer.StartActiveSpan("OnHandleMessage");
+                var parentTraceId = transportMessage.Headers.Contains(TransportHeaderKeys.ParentTraceId) ? transportMessage.Headers.GetHeaderValue(TransportHeaderKeys.ParentTraceId) : null;
+                var baggage = transportMessage.Headers.Contains(TransportHeaderKeys.Baggage) ? transportMessage.Headers.GetHeaderValue(TransportHeaderKeys.Baggage) : null;
 
-                if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
+                var telemetrySpan = string.IsNullOrEmpty(parentTraceId)
+                    ? _tracer.StartActiveSpan("OnHandleMessage")
+                    : _tracer.StartActiveSpan("OnHandleMessage", SpanKind.Consumer, new SpanContext(ActivityTraceId.CreateFromString(parentTraceId.ToCharArray()), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded));
+
+                if (string.IsNullOrEmpty(baggage))
                 {
-                    Baggage.Current.SetBaggage("CorrelationId", transportMessage.CorrelationId);
-                }
+                    if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
+                    {
+                        Baggage.Current.SetBaggage("CorrelationId", transportMessage.CorrelationId);
+                    }
 
-                Baggage.Current.SetBaggage("MessageId", transportMessage.MessageId.ToString());
+                    Baggage.Current.SetBaggage("MessageId", transportMessage.MessageId.ToString());
+                }
+                else
+                {
+                    var baggagePairs = new List<KeyValuePair<string, string>>();
+                    var baggageItems = baggage.Split(',');
+                    
+                    if (baggageItems.Length > 0)
+                    {
+                        foreach (var item in baggageItems)
+                        {
+                            if (NameValueHeaderValue.TryParse(item, out var baggageItem))
+                            {
+                                baggagePairs.Add(new KeyValuePair<string, string>(baggageItem.Name, HttpUtility.UrlDecode(baggageItem.Value)));
+                            }
+                        }
+                    }
+
+                    for (var i = baggagePairs.Count - 1; i >= 0; i--)
+                    {
+                        var baggagePair = baggagePairs[i];
+                        
+                        Baggage.Current.SetBaggage(baggagePair.Key, baggagePair.Value);
+                    }
+                }
 
                 pipelineEvent.Pipeline.State.SetTelemetrySpan(telemetrySpan);
             }

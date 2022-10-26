@@ -29,6 +29,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnBeforeHandleMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 var state = pipelineEvent.Pipeline.State;
@@ -86,7 +88,15 @@ namespace Shuttle.Esb.OpenTelemetry
                     }
                 }
 
-                pipelineEvent.Pipeline.State.SetTelemetrySpan(telemetrySpan);
+                if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
+                {
+                    telemetrySpan?.SetAttribute("CorrelationId", transportMessage.CorrelationId);
+                }
+
+                telemetrySpan?.SetAttribute("MessageId", transportMessage.MessageId.ToString());
+                telemetrySpan?.SetAttribute("MessageType", transportMessage.MessageType);
+
+                state.SetTelemetrySpan(telemetrySpan);
             }
             catch
             {
@@ -96,6 +106,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnAfterHandleMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 pipelineEvent.Pipeline.State.GetTelemetrySpan()?.Dispose();
@@ -108,6 +120,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnPipelineException pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 var state = pipelineEvent.Pipeline.State;
@@ -126,6 +140,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnAfterDispatchTransportMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 pipelineEvent.Pipeline.State.GetRootTelemetrySpan()?.Dispose();
@@ -138,9 +154,11 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnPipelineStarting pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
-                var telemetrySpan = _tracer.StartRootSpan(_inboxMessagePipelineName);
+                var telemetrySpan = _tracer.StartActiveSpan(_inboxMessagePipelineName);
 
                 telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
                 telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);

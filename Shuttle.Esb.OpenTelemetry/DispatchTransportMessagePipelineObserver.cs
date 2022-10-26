@@ -27,6 +27,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnPipelineStarting pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 var state = pipelineEvent.Pipeline.State;
@@ -83,10 +85,15 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnAfterFindRouteForMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
-                pipelineEvent.Pipeline.State.GetTelemetrySpan()?.Dispose();
-                pipelineEvent.Pipeline.State.SetTelemetrySpan(_tracer.StartActiveSpan("OnSerializeTransportMessage"));
+                var state = pipelineEvent.Pipeline.State;
+
+                state.GetTelemetrySpan()?.SetAttribute("RecipientInboxWorkQueueUri", state.GetTransportMessage().RecipientInboxWorkQueueUri);
+                state.GetTelemetrySpan()?.Dispose();
+                state.SetTelemetrySpan(_tracer.StartActiveSpan("OnSerializeTransportMessage"));
             }
             catch
             {
@@ -96,6 +103,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnAfterSerializeTransportMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 pipelineEvent.Pipeline.State.GetTelemetrySpan()?.Dispose();
@@ -109,6 +118,8 @@ namespace Shuttle.Esb.OpenTelemetry
 
         public void Execute(OnAfterDispatchTransportMessage pipelineEvent)
         {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
             try
             {
                 pipelineEvent.Pipeline.State.GetTelemetrySpan()?.Dispose();

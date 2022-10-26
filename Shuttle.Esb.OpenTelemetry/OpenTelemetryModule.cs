@@ -14,9 +14,10 @@ namespace Shuttle.Esb.OpenTelemetry
 {
     public class OpenTelemetryModule : IDisposable, IPipelineObserver<OnStarted>
     {
-        private readonly Type _dispatchTransportMessagePipelineType = typeof(DispatchTransportMessagePipeline);
         private readonly string _environmentName;
+        private readonly Type _dispatchTransportMessagePipelineType = typeof(DispatchTransportMessagePipeline);
         private readonly Type _inboxMessagePipelineType = typeof(InboxMessagePipeline);
+        private readonly Type _transportMessagePipelineType = typeof(TransportMessagePipeline);
         private readonly InboxMessagePipelineObserver _inboxMessagePipelineObserver;
         private readonly DispatchTransportMessagePipelineObserver _dispatchTransportMessagePipelineObserver;
         private readonly OpenTelemetryOptions _openTelemetryOptions;
@@ -31,6 +32,7 @@ namespace Shuttle.Esb.OpenTelemetry
         private Thread _thread;
         private string _ipv4Address;
         private bool _tracingStarted;
+        private readonly TransportMessagePipelineObserver _transportMessagePipelineObserver;
 
         public OpenTelemetryModule(IOptions<OpenTelemetryOptions> sentinelOptions, IOptions<ServiceBusOptions> serviceBusOptions, TracerProvider tracerProvider, IPipelineFactory pipelineFactory, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
         {
@@ -56,6 +58,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
             _inboxMessagePipelineObserver = new InboxMessagePipelineObserver(_tracer);
             _dispatchTransportMessagePipelineObserver = new DispatchTransportMessagePipelineObserver(_tracer);
+            _transportMessagePipelineObserver = new TransportMessagePipelineObserver(_openTelemetryOptions, _tracer);
 
             hostApplicationLifetime.ApplicationStopping.Register(() =>
             {
@@ -163,6 +166,11 @@ namespace Shuttle.Esb.OpenTelemetry
             if (pipelineType == _dispatchTransportMessagePipelineType)
             {
                 e.Pipeline.RegisterObserver(_dispatchTransportMessagePipelineObserver);
+            }
+
+            if (pipelineType == _transportMessagePipelineType)
+            {
+                e.Pipeline.RegisterObserver(_transportMessagePipelineObserver);
             }
         }
     }

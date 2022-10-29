@@ -1,4 +1,4 @@
-# OpenTelemetry
+# Shuttle.Esb.OpenTelemetry
 
 ```
 PM> Install-Package Shuttle.Esb.OpenTelemetry

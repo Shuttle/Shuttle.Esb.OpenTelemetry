@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using OpenTelemetry.Trace;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
@@ -9,7 +8,7 @@ namespace Shuttle.Esb.OpenTelemetry
 {
     public static class ServiceCollectionExtensions
     {
-        public static TracerProviderBuilder AddServiceBusInstrumentation(this TracerProviderBuilder builder)
+        public static TracerProviderBuilder AddServiceBusSource(this TracerProviderBuilder builder)
         {
             Guard.AgainstNull(builder, nameof(builder));
 
@@ -30,6 +29,9 @@ namespace Shuttle.Esb.OpenTelemetry
             services.AddOptions<OpenTelemetryOptions>().Configure(options =>
             {
                 options.Enabled = sentinelModuleBuilder.Options.Enabled;
+                options.IncludeSerializedMessage = sentinelModuleBuilder.Options.IncludeSerializedMessage;
+                options.HeartbeatIntervalDuration = sentinelModuleBuilder.Options.HeartbeatIntervalDuration;
+                options.TransientInstance = sentinelModuleBuilder.Options.TransientInstance;
             });
 
             services.AddPipelineModule<OpenTelemetryModule>();

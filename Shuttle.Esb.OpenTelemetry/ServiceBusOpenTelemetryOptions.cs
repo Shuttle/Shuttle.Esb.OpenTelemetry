@@ -2,9 +2,9 @@
 
 namespace Shuttle.Esb.OpenTelemetry
 {
-    public class OpenTelemetryOptions
+    public class ServiceBusOpenTelemetryOptions
     {
-        public const string SectionName = "Shuttle:Modules:ServiceBusInstrumentation";
+        public const string SectionName = "Shuttle:Instrumentation:ServiceBus";
 
         public bool Enabled { get; set; } = true;
         public bool IncludeSerializedMessage { get; set; } = true;

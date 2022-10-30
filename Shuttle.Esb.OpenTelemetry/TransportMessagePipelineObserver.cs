@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Net.Http.Headers;
-using System.Web;
-using Microsoft.Extensions.Options;
-using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
@@ -20,17 +13,72 @@ namespace Shuttle.Esb.OpenTelemetry
         IPipelineObserver<OnAfterEncryptMessage>,
         IPipelineObserver<OnAfterCompressMessage>
     {
-        private readonly string _transportMessagePipeline = nameof(TransportMessagePipeline);
+        private readonly ServiceBusOpenTelemetryOptions _openTelemetryOptions;
         private readonly Tracer _tracer;
-        private readonly OpenTelemetryOptions _openTelemetryOptions;
+        private readonly string _transportMessagePipeline = nameof(TransportMessagePipeline);
 
-        public TransportMessagePipelineObserver(OpenTelemetryOptions openTelemetryOptions, Tracer tracer)
+        public TransportMessagePipelineObserver(ServiceBusOpenTelemetryOptions openTelemetryOptions, Tracer tracer)
         {
             Guard.AgainstNull(openTelemetryOptions, nameof(openTelemetryOptions));
             Guard.AgainstNull(tracer, nameof(tracer));
 
             _tracer = tracer;
             _openTelemetryOptions = openTelemetryOptions;
+        }
+
+        public void Execute(OnAfterAssembleMessage pipelineEvent)
+        {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
+            try
+            {
+                var state = pipelineEvent.Pipeline.State;
+
+                state.GetTelemetrySpan()?.Dispose();
+                state.SetTelemetrySpan(_tracer.StartActiveSpan("OnSerializeMessage"));
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
+        public void Execute(OnAfterCompressMessage pipelineEvent)
+        {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
+            try
+            {
+                var state = pipelineEvent.Pipeline.State;
+
+                state.GetTelemetrySpan()?.SetAttribute("CompressionAlgorithm)", state.GetTransportMessage().CompressionAlgorithm);
+
+                state.GetTelemetrySpan()?.Dispose();
+                state.GetRootTelemetrySpan()?.Dispose();
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
+        public void Execute(OnAfterEncryptMessage pipelineEvent)
+        {
+            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
+
+            try
+            {
+                var state = pipelineEvent.Pipeline.State;
+
+                state.GetTelemetrySpan()?.SetAttribute("EncryptionAlgorithm", state.GetTransportMessage().EncryptionAlgorithm);
+
+                state.GetTelemetrySpan()?.Dispose();
+                state.SetTelemetrySpan(_tracer.StartActiveSpan("OnCompressMessage"));
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         public void Execute(OnAfterSerializeMessage pipelineEvent)
@@ -77,61 +125,6 @@ namespace Shuttle.Esb.OpenTelemetry
                 telemetrySpan?.SetAttribute("MessageType", state.GetMessage().GetType().FullName);
 
                 state.SetTelemetrySpan(telemetrySpan);
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-
-        public void Execute(OnAfterAssembleMessage pipelineEvent)
-        {
-            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
-
-            try
-            {
-                var state = pipelineEvent.Pipeline.State;
-
-                state.GetTelemetrySpan()?.Dispose();
-                state.SetTelemetrySpan(_tracer.StartActiveSpan("OnSerializeMessage"));
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-
-        public void Execute(OnAfterEncryptMessage pipelineEvent)
-        {
-            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
-
-            try
-            {
-                var state = pipelineEvent.Pipeline.State;
-
-                state.GetTelemetrySpan()?.SetAttribute("EncryptionAlgorithm", state.GetTransportMessage().EncryptionAlgorithm);
-
-                state.GetTelemetrySpan()?.Dispose();
-                state.SetTelemetrySpan(_tracer.StartActiveSpan("OnCompressMessage"));
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-
-        public void Execute(OnAfterCompressMessage pipelineEvent)
-        {
-            Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
-
-            try
-            {
-                var state = pipelineEvent.Pipeline.State;
-
-                state.GetTelemetrySpan()?.SetAttribute("CompressionAlgorithm)", state.GetTransportMessage().CompressionAlgorithm);
-
-                state.GetTelemetrySpan()?.Dispose();
-                state.GetRootTelemetrySpan()?.Dispose();
             }
             catch
             {

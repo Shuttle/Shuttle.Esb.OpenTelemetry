@@ -20,7 +20,7 @@ namespace Shuttle.Esb.OpenTelemetry
         private readonly Type _transportMessagePipelineType = typeof(TransportMessagePipeline);
         private readonly InboxMessagePipelineObserver _inboxMessagePipelineObserver;
         private readonly DispatchTransportMessagePipelineObserver _dispatchTransportMessagePipelineObserver;
-        private readonly OpenTelemetryOptions _openTelemetryOptions;
+        private readonly ServiceBusOpenTelemetryOptions _openTelemetryOptions;
         private readonly ServiceBusOptions _serviceBusOptions;
         private readonly Type _startupPipelineType = typeof(StartupPipeline);
 
@@ -34,10 +34,10 @@ namespace Shuttle.Esb.OpenTelemetry
         private bool _tracingStarted;
         private readonly TransportMessagePipelineObserver _transportMessagePipelineObserver;
 
-        public OpenTelemetryModule(IOptions<OpenTelemetryOptions> sentinelOptions, IOptions<ServiceBusOptions> serviceBusOptions, TracerProvider tracerProvider, IPipelineFactory pipelineFactory, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
+        public OpenTelemetryModule(IOptions<ServiceBusOpenTelemetryOptions> openTelemetryOptions, IOptions<ServiceBusOptions> serviceBusOptions, TracerProvider tracerProvider, IPipelineFactory pipelineFactory, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
         {
-            Guard.AgainstNull(sentinelOptions, nameof(sentinelOptions));
-            Guard.AgainstNull(sentinelOptions.Value, nameof(sentinelOptions.Value));
+            Guard.AgainstNull(openTelemetryOptions, nameof(openTelemetryOptions));
+            Guard.AgainstNull(openTelemetryOptions.Value, nameof(openTelemetryOptions.Value));
             Guard.AgainstNull(serviceBusOptions, nameof(serviceBusOptions));
             Guard.AgainstNull(serviceBusOptions.Value, nameof(serviceBusOptions.Value));
             Guard.AgainstNull(tracerProvider, nameof(tracerProvider));
@@ -46,7 +46,7 @@ namespace Shuttle.Esb.OpenTelemetry
             Guard.AgainstNullOrEmptyString(hostEnvironment.EnvironmentName, nameof(hostEnvironment.EnvironmentName));
 
             _serviceBusOptions = serviceBusOptions.Value;
-            _openTelemetryOptions = sentinelOptions.Value;
+            _openTelemetryOptions = openTelemetryOptions.Value;
             _environmentName = hostEnvironment.EnvironmentName;
 
             if (!_openTelemetryOptions.Enabled)

@@ -6,7 +6,7 @@ namespace Shuttle.Esb.OpenTelemetry
 {
     public class OpenTelemetryBuilder
     {
-        private OpenTelemetryOptions _sentinelOptions = new OpenTelemetryOptions();
+        private ServiceBusOpenTelemetryOptions _openTelemetryOptions = new ServiceBusOpenTelemetryOptions();
 
         public OpenTelemetryBuilder(IServiceCollection services)
         {
@@ -15,10 +15,10 @@ namespace Shuttle.Esb.OpenTelemetry
             Services = services;
         }
 
-        public OpenTelemetryOptions Options
+        public ServiceBusOpenTelemetryOptions Options
         {
-            get => _sentinelOptions;
-            set => _sentinelOptions = value ?? throw new ArgumentNullException(nameof(value));
+            get => _openTelemetryOptions;
+            set => _openTelemetryOptions = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         public IServiceCollection Services { get; }

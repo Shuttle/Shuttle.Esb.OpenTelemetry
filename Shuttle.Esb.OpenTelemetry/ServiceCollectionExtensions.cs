@@ -22,16 +22,16 @@ namespace Shuttle.Esb.OpenTelemetry
         {
             Guard.AgainstNull(services, nameof(services));
 
-            var sentinelModuleBuilder = new OpenTelemetryBuilder(services);
+            var openTelemetryBuilder = new OpenTelemetryBuilder(services);
 
-            builder?.Invoke(sentinelModuleBuilder);
+            builder?.Invoke(openTelemetryBuilder);
 
-            services.AddOptions<OpenTelemetryOptions>().Configure(options =>
+            services.AddOptions<ServiceBusOpenTelemetryOptions>().Configure(options =>
             {
-                options.Enabled = sentinelModuleBuilder.Options.Enabled;
-                options.IncludeSerializedMessage = sentinelModuleBuilder.Options.IncludeSerializedMessage;
-                options.HeartbeatIntervalDuration = sentinelModuleBuilder.Options.HeartbeatIntervalDuration;
-                options.TransientInstance = sentinelModuleBuilder.Options.TransientInstance;
+                options.Enabled = openTelemetryBuilder.Options.Enabled;
+                options.IncludeSerializedMessage = openTelemetryBuilder.Options.IncludeSerializedMessage;
+                options.HeartbeatIntervalDuration = openTelemetryBuilder.Options.HeartbeatIntervalDuration;
+                options.TransientInstance = openTelemetryBuilder.Options.TransientInstance;
             });
 
             services.AddPipelineModule<OpenTelemetryModule>();

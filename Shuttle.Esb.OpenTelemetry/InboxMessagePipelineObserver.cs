@@ -17,7 +17,7 @@ namespace Shuttle.Esb.OpenTelemetry
         IPipelineObserver<OnPipelineException>,
         IPipelineObserver<OnAfterDispatchTransportMessage>
     {
-        private readonly string _inboxMessagePipelineName = nameof(InboxMessagePipeline);
+        private const string InboxMessagePipelineName = nameof(InboxMessagePipeline);
         private readonly Tracer _tracer;
 
         public InboxMessagePipelineObserver(Tracer tracer)
@@ -144,7 +144,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
             try
             {
-                pipelineEvent.Pipeline.State.GetRootTelemetrySpan()?.Dispose();
+                pipelineEvent.Pipeline.State.GetPipelineTelemetrySpan()?.Dispose();
             }
             catch
             {
@@ -158,7 +158,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
             try
             {
-                var telemetrySpan = _tracer.StartActiveSpan(_inboxMessagePipelineName);
+                var telemetrySpan = _tracer.StartActiveSpan(InboxMessagePipelineName);
 
                 telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
                 telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);

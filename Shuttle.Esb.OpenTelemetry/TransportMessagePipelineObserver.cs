@@ -51,10 +51,10 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 var state = pipelineEvent.Pipeline.State;
 
-                state.GetTelemetrySpan()?.SetAttribute("CompressionAlgorithm)", state.GetTransportMessage().CompressionAlgorithm);
+                state.GetTelemetrySpan()?.SetAttribute("CompressionAlgorithm", state.GetTransportMessage().CompressionAlgorithm);
 
                 state.GetTelemetrySpan()?.Dispose();
-                state.GetRootTelemetrySpan()?.Dispose();
+                state.GetPipelineTelemetrySpan()?.Dispose();
             }
             catch
             {

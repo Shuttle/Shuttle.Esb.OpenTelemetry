@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using OpenTelemetry;
@@ -123,7 +122,7 @@ namespace Shuttle.Esb.OpenTelemetry
             try
             {
                 pipelineEvent.Pipeline.State.GetTelemetrySpan()?.Dispose();
-                pipelineEvent.Pipeline.State.GetRootTelemetrySpan()?.Dispose();
+                pipelineEvent.Pipeline.State.GetPipelineTelemetrySpan()?.Dispose();
             }
             catch
             {

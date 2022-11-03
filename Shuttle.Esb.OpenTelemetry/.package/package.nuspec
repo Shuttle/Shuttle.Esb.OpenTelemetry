@@ -16,7 +16,7 @@
 		<copyright>Copyright (c) 2022, Eben Roux</copyright>
 		<tags>opentelemetry instrumentation</tags>
 		<dependencies>
-      <dependency id="OpenTelemetry" version="1.3.1" />
+      <dependency id="OpenTelemetry" version="1.4.0" />
       <dependency id="Shuttle.Esb" version="13.2.0" />
 		</dependencies>
 	</metadata>

@@ -16,7 +16,7 @@ namespace Shuttle.Esb.OpenTelemetry
             state.Replace(StateKeys.TelemetrySpan, telemetrySpan);
         }
 
-        public static TelemetrySpan GetRootTelemetrySpan(this IState state)
+        public static TelemetrySpan GetPipelineTelemetrySpan(this IState state)
         {
             return state.Get<TelemetrySpan>(StateKeys.PipelineTelemetrySpan);
         }

@@ -18,5 +18,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("Shuttle.Esb.OpenTelemetry")]
 [assembly: AssemblyCompany("Eben Roux")]
 [assembly: AssemblyConfiguration("Release")]
-[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0-beta.3")]
 [assembly: ComVisible(false)]

@@ -13,10 +13,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle(".NET Standard")]
 #endif
 
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.2.0")]
 [assembly: AssemblyCopyright("Copyright (c) 2022, Eben Roux")]
 [assembly: AssemblyProduct("Shuttle.Esb.OpenTelemetry")]
 [assembly: AssemblyCompany("Eben Roux")]
 [assembly: AssemblyConfiguration("Release")]
-[assembly: AssemblyInformationalVersion("1.0.0-beta.3")]
+[assembly: AssemblyInformationalVersion("1.0.2-beta.3")]
 [assembly: ComVisible(false)]

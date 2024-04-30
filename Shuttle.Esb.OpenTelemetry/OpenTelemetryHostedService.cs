@@ -151,7 +151,10 @@ namespace Shuttle.Esb.OpenTelemetry
         {
             _active = false;
 
-            _pipelineFactory.PipelineCreated -= PipelineCreated;
+            if (_openTelemetryOptions.Enabled)
+            {
+                _pipelineFactory.PipelineCreated -= PipelineCreated;
+            }
 
             await Task.CompletedTask;
         }

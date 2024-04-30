@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -72,7 +73,7 @@ namespace Shuttle.Esb.OpenTelemetry
 
                 telemetrySpan = _tracer.StartActiveSpan("OnFindRouteForMessage");
 
-                telemetrySpan?.SetAttribute("MessageType", transportMessage.MessageType);
+                telemetrySpan.SetAttribute("MessageType", transportMessage.MessageType);
 
                 state.SetTelemetrySpan(telemetrySpan);
             }
@@ -80,6 +81,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnPipelineStarting pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
 
         public void Execute(OnAfterFindRouteForMessage pipelineEvent)
@@ -100,6 +108,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterFindRouteForMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnAfterSerializeTransportMessage pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -115,6 +130,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterSerializeTransportMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnAfterDispatchTransportMessage pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -128,6 +150,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnAfterDispatchTransportMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using OpenTelemetry.Trace;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
@@ -43,6 +44,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterAssembleMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnAfterCompressMessage pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -62,6 +70,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterCompressMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnAfterEncryptMessage pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -79,6 +94,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnAfterEncryptMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
 
         public void Execute(OnAfterSerializeMessage pipelineEvent)
@@ -106,6 +128,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterSerializeMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnPipelineStarting pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -115,14 +144,14 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 var telemetrySpan = _tracer.StartActiveSpan(_transportMessagePipeline);
 
-                telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+                telemetrySpan.SetAttribute("MachineName", Environment.MachineName);
+                telemetrySpan.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
 
                 state.SetPipelineTelemetrySpan(telemetrySpan);
 
                 telemetrySpan = _tracer.StartActiveSpan("OnAssembleMessage");
 
-                telemetrySpan?.SetAttribute("MessageType", state.GetMessage().GetType().FullName);
+                telemetrySpan.SetAttribute("MessageType", state.GetMessage().GetType().FullName);
 
                 state.SetTelemetrySpan(telemetrySpan);
             }
@@ -130,6 +159,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnPipelineStarting pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
     }
 }

@@ -34,13 +34,13 @@ namespace Shuttle.Esb.OpenTelemetry
         private string _ipv4Address;
         private bool _tracingStarted;
         private readonly TransportMessagePipelineObserver _transportMessagePipelineObserver;
+        private readonly IPipelineFactory _pipelineFactory;
 
         public OpenTelemetryHostedService(IOptions<ServiceBusOpenTelemetryOptions> openTelemetryOptions, IOptions<ServiceBusOptions> serviceBusOptions, TracerProvider tracerProvider, IPipelineFactory pipelineFactory, ICancellationTokenSource cancellationTokenSource, IHostEnvironment hostEnvironment, IHostApplicationLifetime hostApplicationLifetime)
         {
             Guard.AgainstNull(openTelemetryOptions, nameof(openTelemetryOptions));
             Guard.AgainstNull(serviceBusOptions, nameof(serviceBusOptions));
             Guard.AgainstNull(tracerProvider, nameof(tracerProvider));
-            Guard.AgainstNull(pipelineFactory, nameof(pipelineFactory));
             Guard.AgainstNull(hostEnvironment, nameof(hostEnvironment));
             Guard.AgainstNullOrEmptyString(hostEnvironment.EnvironmentName, nameof(hostEnvironment.EnvironmentName));
 
@@ -52,6 +52,8 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 return;
             }
+
+            _pipelineFactory = Guard.AgainstNull(pipelineFactory, nameof(pipelineFactory));
 
             _cancellationToken = cancellationTokenSource.Get().Token;
 
@@ -65,8 +67,8 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 using (var telemetrySpan = _tracer.StartRootSpan("EndpointStopped"))
                 {
-                    telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                    telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+                    telemetrySpan.SetAttribute("MachineName", Environment.MachineName);
+                    telemetrySpan.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
                 }
             });
 
@@ -81,8 +83,8 @@ namespace Shuttle.Esb.OpenTelemetry
                 {
                     using (var telemetrySpan = _tracer.StartRootSpan(_tracingStarted ? "Heartbeat" : "EndpointStarted"))
                     {
-                        telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                        telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+                        telemetrySpan.SetAttribute("MachineName", Environment.MachineName);
+                        telemetrySpan.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
 
                         if (telemetrySpan is { IsRecording: true } && !_tracingStarted)
                         {
@@ -148,6 +150,8 @@ namespace Shuttle.Esb.OpenTelemetry
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             _active = false;
+
+            _pipelineFactory.PipelineCreated -= PipelineCreated;
 
             await Task.CompletedTask;
         }

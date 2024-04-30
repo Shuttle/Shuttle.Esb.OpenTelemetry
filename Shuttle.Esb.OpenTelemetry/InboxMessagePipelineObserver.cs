@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Web;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
@@ -90,11 +91,11 @@ namespace Shuttle.Esb.OpenTelemetry
 
                 if (!string.IsNullOrEmpty(transportMessage.CorrelationId))
                 {
-                    telemetrySpan?.SetAttribute("CorrelationId", transportMessage.CorrelationId);
+                    telemetrySpan.SetAttribute("CorrelationId", transportMessage.CorrelationId);
                 }
 
-                telemetrySpan?.SetAttribute("MessageId", transportMessage.MessageId.ToString());
-                telemetrySpan?.SetAttribute("MessageType", transportMessage.MessageType);
+                telemetrySpan.SetAttribute("MessageId", transportMessage.MessageId.ToString());
+                telemetrySpan.SetAttribute("MessageType", transportMessage.MessageType);
 
                 state.SetTelemetrySpan(telemetrySpan);
             }
@@ -102,6 +103,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnBeforeHandleMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
 
         public void Execute(OnAfterHandleMessage pipelineEvent)
@@ -116,6 +124,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnAfterHandleMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
 
         public void Execute(OnPipelineException pipelineEvent)
@@ -138,6 +153,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnPipelineException pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnAfterDispatchTransportMessage pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -152,6 +174,13 @@ namespace Shuttle.Esb.OpenTelemetry
             }
         }
 
+        public async Task ExecuteAsync(OnAfterDispatchTransportMessage pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
+        }
+
         public void Execute(OnPipelineStarting pipelineEvent)
         {
             Guard.AgainstNull(pipelineEvent, nameof(pipelineEvent));
@@ -160,8 +189,8 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 var telemetrySpan = _tracer.StartActiveSpan(InboxMessagePipelineName);
 
-                telemetrySpan?.SetAttribute("MachineName", Environment.MachineName);
-                telemetrySpan?.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
+                telemetrySpan.SetAttribute("MachineName", Environment.MachineName);
+                telemetrySpan.SetAttribute("BaseDirectory", AppDomain.CurrentDomain.BaseDirectory);
 
                 pipelineEvent.Pipeline.State.SetPipelineTelemetrySpan(telemetrySpan);
             }
@@ -169,6 +198,13 @@ namespace Shuttle.Esb.OpenTelemetry
             {
                 // ignored
             }
+        }
+
+        public async Task ExecuteAsync(OnPipelineStarting pipelineEvent)
+        {
+            Execute(pipelineEvent);
+
+            await Task.CompletedTask;
         }
     }
 }

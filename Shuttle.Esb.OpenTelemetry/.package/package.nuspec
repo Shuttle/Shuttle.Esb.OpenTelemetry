@@ -3,7 +3,7 @@
 <package>
 	<metadata>
 		<id>Shuttle.Esb.OpenTelemetry</id>
-		<version>1.0.2-beta.3</version>
+		<version>14.0.0</version>
 		<authors>Eben Roux</authors>
 		<owners>Eben Roux</owners>
 		<license type="expression">BSD-3-Clause</license>
@@ -13,11 +13,11 @@
 		<repository type="git" url="https://github.com/Shuttle/Shuttle.Esb.OpenTelemetry.git" />
 		<projectUrl>https://github.com/Shuttle/Shuttle.Esb.OpenTelemetry</projectUrl>
 		<description>OpenTelemetry instrumentation for Shuttle.Esb implementations.</description>
-		<copyright>Copyright (c) 2022, Eben Roux</copyright>
+		<copyright>Copyright (c) 2024, Eben Roux</copyright>
 		<tags>opentelemetry instrumentation</tags>
 		<dependencies>
-      <dependency id="OpenTelemetry" version="1.4.0-beta.3" />
-      <dependency id="Shuttle.Esb" version="13.2.1" />
+      <dependency id="OpenTelemetry" version="1.8.1" />
+      <dependency id="Shuttle.Esb" version="14.0.0" />
 		</dependencies>
 	</metadata>
 	<files>

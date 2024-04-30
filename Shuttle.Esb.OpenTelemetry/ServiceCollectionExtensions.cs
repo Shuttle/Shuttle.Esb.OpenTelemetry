@@ -28,7 +28,7 @@ namespace Shuttle.Esb.OpenTelemetry
                     options.TransientInstance = openTelemetryBuilder.Options.TransientInstance;
                 });
 
-                services.AddPipelineModule<OpenTelemetryModule>();
+                services.AddHostedService<OpenTelemetryHostedService>();
             });
 
             return tracerProviderBuilder;
